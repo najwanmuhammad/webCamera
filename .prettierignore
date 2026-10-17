@@ -1,0 +1,11 @@
+node_modules
+dist
+playwright-report
+test-results
+package-lock.json
+
+.agents/
+.codex/
+.sites-checkout/
+qa-artifacts/
+tests/fixtures/
