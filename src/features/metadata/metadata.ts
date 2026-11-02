@@ -123,7 +123,7 @@ export function watermarkLines(
       .filter(Boolean)
       .join(', '),
     showCoordinates && validCoordinates
-      ? `Lintang: ${Number(metadata.latitude).toFixed(6)} · Bujur: ${Number(metadata.longitude).toFixed(6)}`
+      ? `${Number(metadata.latitude).toFixed(6)}, ${Number(metadata.longitude).toFixed(6)}`
       : '',
   ].filter(Boolean);
 }
