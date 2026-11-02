@@ -100,13 +100,21 @@ export function normalizeAddress(
     country: indonesia ? 'Indonesia' : clean(address.country),
   };
 }
-export function watermarkLines(metadata: PhotoMetadata): string[] {
+export function watermarkLines(
+  metadata: PhotoMetadata,
+  showCoordinates = false,
+): string[] {
   const stamp = validLocalTimestamp(metadata.localTimestamp)
     ? format(parseISO(metadata.localTimestamp), 'eeee, d MMMM yyyy, HH:mm:ss', {
         locale: id,
       })
     : '';
   const title = stamp ? stamp[0]!.toUpperCase() + stamp.slice(1) : '';
+  const validCoordinates =
+    coordinate(90).safeParse(metadata.latitude).success &&
+    coordinate(180).safeParse(metadata.longitude).success &&
+    metadata.latitude.trim() !== '' &&
+    metadata.longitude.trim() !== '';
   return [
     title,
     clean(metadata.shortAddress),
@@ -114,5 +122,8 @@ export function watermarkLines(metadata: PhotoMetadata): string[] {
       .map(clean)
       .filter(Boolean)
       .join(', '),
+    showCoordinates && validCoordinates
+      ? `Lintang: ${Number(metadata.latitude).toFixed(6)} · Bujur: ${Number(metadata.longitude).toFixed(6)}`
+      : '',
   ].filter(Boolean);
 }

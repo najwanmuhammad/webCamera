@@ -5,6 +5,7 @@ export interface WatermarkSettings {
   fontSize: number; // relative to image width
   font: 'sans' | 'serif' | 'mono';
   bold: boolean;
+  showCoordinates: boolean;
   color: string;
   backgroundColor: string;
   backgroundOpacity: number;
@@ -16,6 +17,7 @@ export const defaultWatermark = (): WatermarkSettings => ({
   fontSize: 0.026,
   font: 'sans',
   bold: false,
+  showCoordinates: false,
   color: '#ffffff',
   backgroundColor: '#000000',
   backgroundOpacity: 0.45,

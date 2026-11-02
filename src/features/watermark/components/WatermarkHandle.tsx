@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { WatermarkLayout } from '../render-watermark';
 import type { WatermarkSettings } from '../types';
 import { usePhotoStore } from '@/features/editor/store/photo-store';
@@ -20,13 +20,32 @@ export function WatermarkHandle({
     travelY: number;
   } | null>(null);
   const update = usePhotoStore((state) => state.updateWatermark);
+  const pending = useRef<{ x: number; y: number } | null>(null);
+  const frame = useRef<number | null>(null);
+  function flush() {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    if (pending.current) {
+      update(pending.current);
+      pending.current = null;
+    }
+  }
+  useEffect(
+    () => () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    },
+    [],
+  );
   if (!layout.width || !layout.height) return null;
   return (
     <button
       type="button"
       aria-label="Pindahkan watermark; gunakan tombol panah untuk menggeser"
-      className="absolute touch-none cursor-grab rounded border border-dashed border-primary/70 bg-transparent focus-visible:outline-2 focus-visible:outline-primary active:cursor-grabbing"
+      className="absolute touch-none cursor-grab rounded border border-dashed border-primary/70 watermark-drag-target bg-transparent focus-visible:outline-2 focus-visible:outline-primary active:cursor-grabbing"
       style={{
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
         left: `${layout.x * 100}%`,
         top: `${layout.y * 100}%`,
         width: `${layout.width * 100}%`,
@@ -60,6 +79,7 @@ export function WatermarkHandle({
       }}
       onPointerDown={(event) => {
         if (event.button !== 0 || drag.current) return;
+        event.preventDefault();
         const parent = event.currentTarget.parentElement;
         if (!parent) return;
         event.currentTarget.focus({ preventScroll: true });
@@ -80,7 +100,7 @@ export function WatermarkHandle({
       onPointerMove={(event) => {
         const current = drag.current;
         if (!current || current.pointer !== event.pointerId) return;
-        update({
+        pending.current = {
           x:
             current.x +
             (current.travelX > 0
@@ -91,18 +111,23 @@ export function WatermarkHandle({
             (current.travelY > 0
               ? (event.clientY - current.clientY) / current.travelY
               : 0),
-        });
+        };
+        if (frame.current === null)
+          frame.current = requestAnimationFrame(flush);
       }}
       onPointerUp={(event) => {
         if (drag.current?.pointer === event.pointerId) {
+          flush();
           drag.current = null;
           event.currentTarget.releasePointerCapture(event.pointerId);
         }
       }}
       onPointerCancel={() => {
+        flush();
         drag.current = null;
       }}
       onLostPointerCapture={() => {
+        flush();
         drag.current = null;
       }}
     />

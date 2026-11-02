@@ -22,6 +22,24 @@ export function WatermarkControls({
           Atur ulang
         </Button>
       </div>
+      <label className="flex min-h-11 items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          role="switch"
+          className="size-5 accent-primary"
+          checked={settings.showCoordinates}
+          onChange={(event) =>
+            update({ showCoordinates: event.target.checked })
+          }
+        />
+        Tampilkan koordinat
+      </label>
+      {settings.showCoordinates ? (
+        <p className="text-xs text-muted-foreground">
+          Lintang dan bujur ditampilkan jika keduanya valid. Isi melalui GPS
+          atau edit manual di Foto & metadata.
+        </p>
+      ) : null}
       <label className="editor-label">
         Jenis huruf
         <select

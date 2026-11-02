@@ -434,3 +434,15 @@ p {
     border-color: #b9f6ce;
   }
 }
+
+/* Expanded finger target; no native scrolling/selection during functional dragging. */
+.watermark-drag-target::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+.watermark-drag-target {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

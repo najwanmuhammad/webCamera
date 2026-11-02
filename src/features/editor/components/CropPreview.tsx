@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { renderPhoto } from '@/features/images/render-photo';
+import { renderPhotoBase } from '@/features/images/render-photo';
 import { WatermarkHandle } from '@/features/watermark/components/WatermarkHandle';
+import { drawWatermark } from '@/features/watermark/render-watermark';
 import type { WatermarkLayout } from '@/features/watermark/render-watermark';
 import { loadImage } from '@/features/images/image-processing';
 import type { Photo } from '@/features/images/types';
@@ -14,6 +15,13 @@ export function CropPreview({
   mode?: 'crop' | 'watermark';
 }) {
   const [layout, setLayout] = useState<WatermarkLayout | null>(null);
+  const baseRef = useRef<{
+    canvas: HTMLCanvasElement;
+    url: string;
+    crop: Photo['crop'];
+    width: number;
+    height: number;
+  } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{
@@ -45,14 +53,43 @@ export function CropPreview({
         Math.floor((photo.width * photo.crop.width) / numerator),
       ),
     );
-    canvas.width = numerator * scale;
-    canvas.height = denominator * scale;
-    const nextLayout = renderPhoto(
+    const width = numerator * scale;
+    const height = denominator * scale;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    let base = baseRef.current;
+    if (
+      !base ||
+      base.url !== photo.url ||
+      base.crop !== photo.crop ||
+      base.width !== width ||
+      base.height !== height
+    ) {
+      const cached = base?.canvas ?? document.createElement('canvas');
+      cached.width = width;
+      cached.height = height;
+      const cachedContext = cached.getContext('2d');
+      if (!cachedContext) return;
+      renderPhotoBase(cachedContext, image, photo, width, height);
+      base = {
+        canvas: cached,
+        url: photo.url,
+        crop: photo.crop,
+        width,
+        height,
+      };
+      baseRef.current = base;
+    }
+    context.clearRect(0, 0, width, height);
+    context.drawImage(base.canvas, 0, 0);
+    const nextLayout = drawWatermark(
       context,
-      image,
-      photo,
-      canvas.width,
-      canvas.height,
+      photo.metadata,
+      photo.watermark,
+      width,
+      height,
     );
     setLayout((previous) =>
       previous &&
@@ -89,13 +126,16 @@ export function CropPreview({
     return () => {
       cancelled = true;
       imageRef.current = null;
+      if (baseRef.current) {
+        baseRef.current.canvas.width = baseRef.current.canvas.height = 0;
+        baseRef.current = null;
+      }
       if (loaded) loaded.src = '';
     };
   }, [photo.url]);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => draw());
-    return () => cancelAnimationFrame(frame);
+    draw();
   }, [
     photo.crop.x,
     photo.crop.y,

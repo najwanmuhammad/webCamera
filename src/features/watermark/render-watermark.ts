@@ -65,7 +65,7 @@ export function layoutWatermark(
   const width = 1000;
   const height = width / aspect;
   const margin = 20;
-  const paragraphs = watermarkLines(metadata);
+  const paragraphs = watermarkLines(metadata, settings.showCoordinates);
   let size = Math.max(10, Math.min(60, settings.fontSize * width));
   let lines: string[] = [];
   let padding = 0;
